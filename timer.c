@@ -32,8 +32,8 @@ int main(void){
 #endif
     DDRB |= (1 << 5); // Set Port B, pin 5 to output, as this correspondse to OC1A
 
-    // TODO set timer 4 channel A to PWM mode 
-    // TODO set duty cycle of timer 4 channel A
+    // TODO set 8-bit timer to CTC  mode 
+    // TODO set count of timer 4 channel A to the equivalent of 1Hz
 
 
     // TODO start timer 4 at a prescale value of (64?)
@@ -57,13 +57,10 @@ int main(void){
         // Effectively we're only using 8-bits from the pot: let's use the 8-bit
         // timer then!
         if (abs(curr - last) > 0x03){
-            /*for (i=0; i<=3; i++){*/
-                /*PORTB |= (1 << 5);*/
-                /*_delay_ms(1000);*/
-                /*PORTB &= ~(1 << 5);*/
-            /*}*/
-            OCR1A = (0x00<<10) | curr;
+            // TODO update timer counter or duty cycle register with upper 8
+            // bits of the pot reading
 #if defined(DEBUG)
+            // TODO implement debug messages as an interrupt to clean up code
             change = 1;
             if (change == 1){
                 print("Pot setting = ");

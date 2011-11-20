@@ -1,0 +1,38 @@
+
+SET timer A to a prescaled value of system clock
+SET timer A to CTC mode
+SET output from timer A to toggle at CTC
+
+SET timer B frequency to input from timer A output
+SET timer B to CTC mode
+SET output from timer B to toggle LED
+
+WHILE(forever){
+    CHECK POT
+    if (POT changed){
+        UPDATE OVERFLOW_SWITCH
+    }
+}
+
+SOLUTION:
+# timer A will be a 16-bit timer (T1)
+# timer B will be an 8-bit timer (T0)
+# timer A Overflow Counter output for channel A (OC1A) = Port B bit 5, or PINB5
+# timer B external input (INT0) = Port D bit 0, or PIND0
+# timer B Overflow Counter output for channel A (OC0A) = Port B bit 7, or PINB7
+
+# system clock will run at 0.5MHz
+# This should allow for reasonably complex code to run (500,000 instructions per
+# second)
+# timer A will run with with a pre-scaler of 8. This means 62,500 counts = 1 sec
+# at 62,500 counts, timer A will toggle the input to timer B
+# timer B will be running at 1 cycle / 2 seconds, or 0.5 HZ
+# 0.5 Hz will be the switching frequency.
+# heat will be controlled by keeping the element on for a fraction of that
+# 0.5Hz
+# timer B output will be in PWM mode
+# duty cycle will be set by potentiometer
+
+
+# After debugging, timer B will likely have a pre-scaler set to reduce the
+# frequency further.

@@ -45,10 +45,10 @@ void timer1Init(void){
     OCR0A = 0xFF;
     /*// start timer 0 with 1024 pre-scaler*/
     /*TCCR0B |= (1 << CS02 | 1 << CS00);*/
-    // start timer 0 with 64 pre-scaler
-    TCCR0B |= (1 << CS01 | 1 << CS00);
-    /*// start timer 0 with a 256 pre-scaler*/
-    /*TCCR0B |= (1 << CS02);*/
+    /*// start timer 0 with 64 pre-scaler*/
+    /*TCCR0B |= (1 << CS01 | 1 << CS00);*/
+    // start timer 0 with a 256 pre-scaler
+    TCCR0B |= (1 << CS02);
     /*// start timer 0 with an 8 pre-scaler*/
     /*TCCR0B |= (1 << CS01);*/
 
@@ -58,12 +58,17 @@ void timer1Init(void){
     // set T1 to input
     DDRD &= ~(1 << 6);
 
-    // set up timer 1 in fast PWM bode with 10-bit resolution (handy!)
-    TCCR1A |= (1 << WGM11 | 1 << WGM10);
-    TCCR1B |= (1 << WGM12);
+    /*// set up timer 1 in fast PWM bode with 10-bit resolution (handy!)*/
+    /*TCCR1A |= (1 << WGM11 | 1 << WGM10);*/
+    /*TCCR1B |= (1 << WGM12);*/
     /*// set up timer 1 in fast PWM bode with 8-bit resolution (handy!)*/
     /*TCCR1A |= (1 << WGM10);*/
     /*TCCR1B |= (1 << WGM12);*/
+    
+    // set up timer 1 in phase-correct PWM mode with ICR1 as TOP
+    TCCR1A |= (1 << WGM11);
+    // set top to 10-bits
+    ICR1L = 0x3FF;
     // set up output to clear OC1A on compare match, and set it at TOP
     TCCR1A |= (1 << COM1A1);
 

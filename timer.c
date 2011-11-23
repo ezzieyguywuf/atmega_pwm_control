@@ -1,33 +1,21 @@
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 
 void timer1Init(void);
 void analogInit(void);
-int16_t analogGrab(void);
 
 int main(void){
-    uint16_t cycle = 0x04;
     CLKPR = 0x80; // Set clock to 'you can change me' mode
     CLKPR = 0x01; // Set clock to 0.5MHz
 
-    // output will be on OC1A
-    timer1Init();
-    // input will be on PINF1, or ADC1
-    analogInit();
+    SREG = (1 << 7 ); // enable global interupts
+    /*sei(); // start global interupts*/
 
-    // initialize duty cycle of 0%
-    OCR1A = cycle;
+    timer1Init(); // Initialize timers needed. output will be on OC1A
+    analogInit(); // Initialize ADC. input will be on PINF1, or ADC1
+
     while(1){
-        cycle = analogGrab();
-        OCR1A = cycle; // >> 2;
-        // TODO implement this 'off' check as an interupt
-        if (OCR1A < 0x01){
-            TCCR1B &= ~(1 << CS12 | 1 << CS11 | 1 << CS10);
-        }
-        else{
-            /*TCNT1 = 0xFF;*/
-            TCCR1B |= (1 << CS12 | 1 << CS11);
-        }
     }
 
     return 0;
@@ -35,72 +23,58 @@ int main(void){
 
 void timer1Init(void){
 
-    // set OC0A to output
-    DDRB |= (1 << 7);
-    // set timer 0 channel A to CTC mode
-    TCCR0A |= (1 << WGM01);
-    // set OC0A to toggle at compare match
-    TCCR0A |= (1 << COM0A0);
-    // maximize compare match to all eight bits
-    OCR0A = 0xFF;
-    /*// start timer 0 with 1024 pre-scaler*/
-    /*TCCR0B |= (1 << CS02 | 1 << CS00);*/
-    /*// start timer 0 with 64 pre-scaler*/
-    /*TCCR0B |= (1 << CS01 | 1 << CS00);*/
-    // start timer 0 with a 256 pre-scaler
-    TCCR0B |= (1 << CS02);
-    /*// start timer 0 with an 8 pre-scaler*/
-    /*TCCR0B |= (1 << CS01);*/
+    DDRB |= (1 << 7);                    // set OC0A to output
+    TCCR0A |= (1 << WGM01);              // set timer 0 channel A to CTC mode
+    TCCR0A |= (1 << COM0A0);             // set OC0A to toggle at compare match
+    OCR0A = 0xFF;                        // maximize compare match to all eight bits
+    /*TCCR0B |= (1 << CS02 | 1 << CS00); // start timer 0 with 1024 pre-scaler*/
+    /*TCCR0B |= (1 << CS01 | 1 << CS00); // start timer 0 with 64 pre-scaler*/
+    TCCR0B |= (1 << CS02);               // start timer 0 with a 256 pre-scaler
+    /*TCCR0B |= (1 << CS01);             // start timer 0 with an 8 pre-scaler*/
 
     /*----------------TIMER 1---------------------------------------*/
-    // set OC1A to output
-    DDRB |= (1 << 5);
-    // set T1 to input
-    DDRD &= ~(1 << 6);
+    DDRB |= (1 << 5);                       // set OC1A to output
+    DDRD &= ~(1 << 6);                      // set T1 to input
 
-    /*// set up timer 1 in fast PWM bode with 10-bit resolution (handy!)*/
-    /*TCCR1A |= (1 << WGM11 | 1 << WGM10);*/
-    /*TCCR1B |= (1 << WGM12);*/
-    /*// set up timer 1 in fast PWM bode with 8-bit resolution (handy!)*/
-    /*TCCR1A |= (1 << WGM10);*/
-    /*TCCR1B |= (1 << WGM12);*/
-    
-    // set up timer 1 in phase-correct PWM mode with ICR1 as TOP
-    TCCR1A |= (1 << WGM11);
-    // set top to 10-bits
-    ICR1L = 0x3FF;
-    // set up output to clear OC1A on compare match, and set it at TOP
-    TCCR1A |= (1 << COM1A1);
+    TCCR1A |= (1 << WGM11 | 1 << WGM10);    // set up timer 1 in fast PWM bode with
+    TCCR1B |= (1 << WGM12);                 // 10-bit resolution (handy!)
+    /*TCCR1A |= (1 << WGM10);               // set up timer 1 in fast PWM bode with 8-bit*/
+    /*TCCR1B |= (1 << WGM12);               // resolution (handy!)*/
 
-    // initialize at duty cycle of X%
-    OCR1A = 0x0;
+    TCCR1A |= (1 << COM1A1);                // set up output to clear OC1A on compare match,
+                                            // and set it at TOP
 
-    /*// start timer 1 with no prescaling*/
-    /*TCCR1B |= (1 << CS10);*/
+    OCR1A = 0xF;                            // initialize at duty cycle of 50%
 
-    /*// start timer 1 with 1024 prescaler*/
-    /*TCCR1B |= (1 << CS12 | 1 << CS10);*/
+    /*TCCR1B |= (1 << CS10);                // start timer 1 with no prescaling*/
+    /*TCCR1B |= (1 << CS12 | 1 << CS10);    // start timer 1 with 1024 prescaler*/
 
-    // TODO start timer 1 from external source, rising edge
-    TCCR1B |= (1 << CS12 | 1 << CS11);
+    TCCR1B |= (1 << CS12 | 1 << CS11);      // start timer 1 from external
+                                            // source, rising edge
 }
 
 void analogInit(void){
-}
-
-int16_t analogGrab(void){
-    uint8_t low = 0;
+    // TODO enable high speed mode? Check if this is needed
 
     DDRF &= ~(1 << 1);            // set PINF1 to input
     ADMUX |= (1 << REFS0);        // use VCC as reference
     ADMUX |= (1 << MUX0);         // set up ADC1 as single ended input
     ADMUX &= ~(1 << ADLAR);       // ensure that output is right-adjusted
-                                  // TODO set up Interupt here
+
+    ADCSRA |= (1 << ADATE);       // Auto Trigger Enable, so that the interupt
+                                  // can re-start the conversion
+                                  // TODO Disable non-used analog inputs for
+                                  // power savings?
+    // Enable no trigger source, i.e. free-running mode
+    ADCSRB &= ~(1 << ADTS3 | 1 << ADTS2 | 1 << ADTS1 | 1 << ADTS0);
+    ADCSRA |= (1 << ADIE);        // ADC Interupt Enable
     ADCSRA |= (1 << ADEN);        // enable ADC
     ADCSRA |= (1 << ADSC);        // start conversion
+}
 
-    while (ADCSRA & (1 << ADSC)); // wait for conversion to complete
-
+ISR(_VECTOR(30)){
+    uint8_t low = 0;
     low = ADCL;
-    return ((ADCH << 8) | low);
+    OCR1A = (ADCH << 8 ) | low;
+    ADCSRA |= (1 << ADSC);        // start conversion
 }

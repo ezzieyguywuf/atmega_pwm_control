@@ -9,8 +9,6 @@ int main(void){
     CLKPR = 0x80; // Set clock to 'you can change me' mode
     CLKPR = 0x01; // Set clock to 0.5MHz
 
-    SREG = (1 << 7 ); // enable global interupts
-    /*sei(); // start global interupts*/
 
     timer1Init(); // Initialize timers needed. output will be on OC1A
     analogInit(); // Initialize ADC. input will be on PINF1, or ADC1
@@ -28,8 +26,8 @@ void timer1Init(void){
     TCCR0A |= (1 << COM0A0);             // set OC0A to toggle at compare match
     OCR0A = 0xFF;                        // maximize compare match to all eight bits
     /*TCCR0B |= (1 << CS02 | 1 << CS00); // start timer 0 with 1024 pre-scaler*/
-    /*TCCR0B |= (1 << CS01 | 1 << CS00); // start timer 0 with 64 pre-scaler*/
-    TCCR0B |= (1 << CS02);               // start timer 0 with a 256 pre-scaler
+    TCCR0B |= (1 << CS01 | 1 << CS00); // start timer 0 with 64 pre-scaler
+    /*TCCR0B |= (1 << CS02);               // start timer 0 with a 256 pre-scaler*/
     /*TCCR0B |= (1 << CS01);             // start timer 0 with an 8 pre-scaler*/
 
     /*----------------TIMER 1---------------------------------------*/
@@ -44,7 +42,7 @@ void timer1Init(void){
     TCCR1A |= (1 << COM1A1);                // set up output to clear OC1A on compare match,
                                             // and set it at TOP
 
-    OCR1A = 0xF;                            // initialize at duty cycle of 50%
+    OCR1A = 0x4F;                            // initialize at duty cycle of 50%
 
     /*TCCR1B |= (1 << CS10);                // start timer 1 with no prescaling*/
     /*TCCR1B |= (1 << CS12 | 1 << CS10);    // start timer 1 with 1024 prescaler*/
@@ -63,18 +61,21 @@ void analogInit(void){
 
     ADCSRA |= (1 << ADATE);       // Auto Trigger Enable, so that the interupt
                                   // can re-start the conversion
+    /*ADCSRB |= (1 << ADHSM);       // Enable high-speed mode*/
                                   // TODO Disable non-used analog inputs for
                                   // power savings?
+    // 128 pre-scaler
+    ADCSRA |= (1 << ADPS2 | 1 << ADPS1 | 1 << ADPS0);
     // Enable no trigger source, i.e. free-running mode
     ADCSRB &= ~(1 << ADTS3 | 1 << ADTS2 | 1 << ADTS1 | 1 << ADTS0);
     ADCSRA |= (1 << ADIE);        // ADC Interupt Enable
+    sei();
     ADCSRA |= (1 << ADEN);        // enable ADC
-    ADCSRA |= (1 << ADSC);        // start conversion
+    ADCSRA |= (1 << ADSC); //start conversion
 }
 
-ISR(_VECTOR(30)){
+ISR(ADC_vect){
     uint8_t low = 0;
     low = ADCL;
-    OCR1A = (ADCH << 8 ) | low;
-    ADCSRA |= (1 << ADSC);        // start conversion
+    OCR1A = (ADCH << 8) | low;
 }

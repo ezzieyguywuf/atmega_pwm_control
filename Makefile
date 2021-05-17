@@ -1,6 +1,6 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
-# WinAVR Makefile Template written by Eric B. Weddington, Jörg Wunsch, et al.
+# WinAVR Makefile Template written by Eric B. Weddington, JÃ¶rg Wunsch, et al.
 #
 # Released to the Public Domain
 #
@@ -45,9 +45,7 @@ TARGET = timer
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC =	$(TARGET).c\
-	print.c\
-	usb_debug_only.c
+SRC =	$(TARGET).c
 
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
@@ -305,12 +303,12 @@ AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
 DEBUG_MFREQ = $(F_CPU)
 
 # Set the DEBUG_UI to either gdb or insight.
-# DEBUG_UI = gdb
-DEBUG_UI = insight
+DEBUG_UI = avr-gdb
+#DEBUG_UI = insight
 
 # Set the debugging back-end to either avarice, simulavr.
-DEBUG_BACKEND = avarice
-#DEBUG_BACKEND = simulavr
+#DEBUG_BACKEND = avarice
+DEBUG_BACKEND = simulavr
 
 # GDB Init Filename.
 GDBINIT_FILE = __avr_gdbinit
@@ -504,7 +502,7 @@ extcoff: $(TARGET).elf
 	@echo
 	@echo $(MSG_FLASH) $@
 	$(OBJCOPY) -O $(FORMAT) -R .eeprom -R .fuse -R .lock -R .signature $< $@
-	teensy_loader_cli -mmcu=$(MCU) -w -v $@
+	teensy-loader-cli -mmcu=$(MCU) -w -v $@
 
 %.eep: %.elf
 	@echo
